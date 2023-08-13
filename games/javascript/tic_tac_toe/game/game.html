@@ -1,0 +1,203 @@
+<html>
+    <style>@font-face {font-family: myFont; src: url(font.ttf); }</style>
+    <body>
+        <canvas id = "myCanvas" width = "500" height = "320"></canvas>
+        <script>
+            var can = document.getElementById("myCanvas");
+            var ctx = can.getContext("2d");
+            var fps = 60, delay = 1000/fps;
+            var mouseX, mouseY, gridSize = 64, gameOver = false, msg = "";
+            var board = [[0,0,0],
+                         [0,0,0],
+                         [0,0,0]];
+            
+            setInterval(gameLoop, delay);
+            function gameLoop()
+            {
+                ctx.fillStyle = "#F2F0F2";
+                ctx.fillRect(0, 0, can.width, can.height);
+                if(checkWin(2))
+                    {
+                        gameOver = true;
+                        msg = "You Lose!";
+                    }
+                if(isTie())
+                    {
+                        gameOver = true;
+                        msg = "Draw!";
+                    }
+                if(gameOver)
+                    {
+                        ctx.font = "40px myFont";
+                        ctx.textAlign = "center";
+                        ctx.fillStyle = "#3B393C";
+                        ctx.fillText(msg, 384, can.height/2);
+                    }
+                drawBoard();
+            }
+            
+            function markBoard()
+            {
+                var row = Math.floor(mouseY/64) - 1;
+                var col = Math.floor(mouseX/64) - 1;
+                if(row >= 0 && row < 3 && col >= 0 && col < 3 && board[row][col] == 0 && !gameOver)
+                    {
+                        board[row][col] = 1;
+                        findMove();
+                    }                    
+            }
+            
+            function findMove()
+            {
+                var move = miniMax(2);
+                var row = move.row;
+                var col = move.col;
+                if(row >= 0 && row < 3 && col >= 0 && col < 3)
+                    {
+                        board[row][col] = 2; 
+                    }
+            }
+            
+            function checkWin(player) 
+            {
+                if((board[0][0] == player && board[0][1] == player && board[0][2] == player) ||
+                   (board[1][0] == player && board[1][1] == player && board[1][2] == player) ||
+                   (board[2][0] == player && board[2][1] == player && board[2][2] == player) ||
+                   (board[0][0] == player && board[1][0] == player && board[2][0] == player) ||
+                   (board[0][1] == player && board[1][1] == player && board[2][1] == player) ||
+                   (board[0][2] == player && board[1][2] == player && board[2][2] == player) ||
+                   (board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
+                   (board[0][2] == player && board[1][1] == player && board[2][0] == player)) 
+                    return true;
+                else 
+                    return false;
+            }
+            
+            function isTie()
+            {
+                var flag = true;
+                for(var i = 0; i < 3; i++)
+                    {
+                        for(var j = 0; j < 3; j++)
+                            {
+                                if(board[i][j] == 0)
+                                    {
+                                        flag = false;
+                                    }
+                            }
+                    }
+                return flag;
+            }
+            
+            function miniMax(player)
+            {
+                if(checkWin(1))
+                    return {score : -10};
+                if(checkWin(2))
+                    return {score : 10};         
+                if(isTie())
+                    return {score : 0};
+                
+                var moves = [];
+                for(var i = 0; i < 3; i++)
+                    {
+                        for(var j = 0; j < 3; j++)
+                            {
+                                if(board[i][j] == 0)
+                                    {
+                                        board[i][j] = player;
+                                        var move = {};
+                                        move.row = i;
+                                        move.col = j;
+                                        if(player == 1)
+                                            {
+                                                var temp = miniMax(2);
+                                                move.score = temp.score;
+                                            }
+                                        else if(player == 2)
+                                            {
+                                                var temp = miniMax(1);
+                                                move.score = temp.score;
+                                            }
+                                        board[i][j] = 0;
+                                        moves.push(move);
+                                    }
+                            }
+                    }
+                
+                var best;
+                if(player == 2)
+                    {
+                        var max = -999;
+                        for(var i = 0; i < moves.length; i++)
+                            {
+                                if(moves[i].score > max)
+                                    {
+                                        max = moves[i].score;
+                                        best = i;
+                                    }
+                            }
+                    }
+                else if(player == 1)
+                    {
+                        var min = 999;
+                        for(var i = 0; i < moves.length; i++)
+                            {
+                                if(moves[i].score < min)
+                                    {
+                                        min = moves[i].score;
+                                        best = i;
+                                    }
+                            }
+                    }
+                return (moves[best]);
+            }
+            
+            function drawBoard()
+            {
+                var x = 64, y = 64;
+                ctx.font = "64px myFont";
+                ctx.textAlign = "center";
+                for(var i = 0; i < 3; i++)
+                    {
+                        for(var j = 0; j < 3; j++)
+                            {
+                                if(board[j][i] == 1)
+                                    {
+                                        ctx.fillStyle = "#413E53";
+                                        ctx.fillText("X", x + (i*gridSize) + 32, y + 50 + (j*gridSize));
+                                    }
+                                if(board[j][i] == 2)
+                                    {
+                                        ctx.fillStyle = "#3B393C";
+                                        ctx.fillText("O", x + (i*gridSize) + 32, y + 50 + (j*gridSize));
+                                    }
+                                if(j != 0)
+                                    {
+                                        ctx.beginPath();
+                                        ctx.moveTo(x, y+j*gridSize);
+                                        ctx.lineTo(x+(3*gridSize), y+j*gridSize);
+                                        ctx.strokeStyle = "#3B393C";
+                                        ctx.stroke();
+                                    }
+                            }
+                        if(i != 0)
+                            {
+                                ctx.beginPath();
+                                ctx.moveTo(x+i*gridSize, y);
+                                ctx.lineTo(x+(i*gridSize), y+(3*gridSize));
+                                ctx.stroke();
+                            }
+                    }
+            }
+            
+            window.addEventListener("click", function(evt)
+            {
+                var rect = can.getBoundingClientRect();
+                mouseX = evt.clientX - rect.left;
+                mouseY = evt.clientY - rect.top;
+                markBoard();
+            });
+        </script>
+    </body>
+</html>

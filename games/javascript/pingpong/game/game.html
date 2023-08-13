@@ -1,0 +1,172 @@
+<html>
+    <body>
+    <canvas id = "myCanvas" width = "500" height = "350"></canvas>
+    <script>
+        
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+        var x = c.width/2, y = c.height/2, radius = 10, dirX = 1, dirY = 1, speed = 0.7;
+        var KEYCODES = [], win = false;
+        
+        var bat1 = new Bat(c.width-20, c.height/2-50, 10, "#F2836B", 1);
+        var bat2 = new Bat(10, c.height/2-50, 10, "#63A69F", 2);
+        var sID = setInterval(function()
+        {
+            ctx.fillStyle = "#F5F2F2";
+            ctx.fillRect(0, 0, c.width, c.height);
+            if(!win)
+                {
+                    Ball();
+                    drawBoard();
+                }                
+            bat1.moveSquare();
+            bat1.drawSquare();
+            bat2.moveSquare();
+            bat2.drawSquare();
+            
+            //Draw UI
+            ctx.font = "30px Calibri";
+            ctx.fillStyle = "grey";
+            ctx.textAlign = "left";
+            ctx.fillText(bat2.score, c.width/2+25, 40);                                
+            ctx.textAlign = "right";
+            ctx.fillText(bat1.score, c.width/2-25, 40);
+            
+            //Win
+            if(bat2.score >= 10)
+                {
+                    ctx.font = "40px Calibri";
+                    ctx.fillStyle = "grey";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Player 2 Win", c.width/2, c.height/2);
+                    win = true;
+                }
+            if(bat1.score >= 10)
+                {
+                    ctx.font = "40px Calibri";
+                    ctx.fillStyle = "grey";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Player 1 Win", c.width/2, c.height/2);
+                    win = true;
+                }
+
+        }, 5);
+        
+        function drawBoard()
+        {
+            ctx.beginPath();
+            ctx.moveTo(c.width/2, 0);
+            ctx.lineTo(c.width/2, c.height);
+            ctx.strokeStyle = "grey";
+            ctx.stroke();
+        }
+        
+        function Ball()
+            {
+                //Collision with bat
+                if((x < (c.width - radius)) && (x > radius) && (y < (c.height - radius)) && (y > radius))
+                    {
+                        if((y+(dirY*speed) > bat1.y) && (y+(dirY*speed) < bat1.y+70))
+                            {
+                                if(x+(dirX*speed) > (bat1.x - radius)) 
+                                    {
+                                        dirX = -1;
+                                        speed += 0.1;
+                                    } 
+                            }
+                        if((y+(dirY*speed) > bat2.y) && (y+(dirY*speed) < bat2.y+70))
+                            {
+                                if(x+(dirX*speed) < (bat2.x + radius + 10))
+                                    {
+                                        dirX = 1;
+                                        speed += 0.1;
+                                    }
+                            }
+                        if(y > (c.height - radius-10))
+                            dirY = -1; 
+                        else if(y < radius+10)
+                            dirY = 1;
+                    }
+                if(x > c.width)
+                    {
+                        bat2.score++;
+                        x = c.width/2;
+                        y = c.height/2;
+                        speed = 0.7;
+                    }
+                if(x < 0)
+                    {
+                        bat1.score++;
+                        x = c.width/2;
+                        y = c.height/2;
+                        speed = 0.7;
+                    }
+                //Set direction of the ball 
+                if(dirX == 1)
+                    x+=speed; 
+                else
+                    x-=speed;
+                
+                if(dirY == 1)
+                    y+=speed; 
+                else
+                    y-=speed;
+                
+                ctx.fillStyle="#BEDB39";
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2*Math.PI);
+                ctx.fill();
+            }
+        function Bat(l_x, l_y, l_size, l_color, l_ID)
+        {
+            this.x = l_x;
+            this.y = l_y;
+            this.size = l_size;
+            this.color = l_color;
+            this.ID = l_ID;
+            this.score = 0;
+            var speed = 3;
+
+            this.drawSquare = function()
+            {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size*7);
+            }
+            this.moveSquare = function()
+            {
+                if(this.ID == 1) 
+                    {
+                        if(KEYCODES[38]) this.y -= speed;
+                        if(KEYCODES[40]) this.y += speed;
+                    }
+                else if(this.ID == 2)
+                    {
+                        if(KEYCODES[87]) this.y -= speed;
+                        if(KEYCODES[83]) this.y += speed;
+                    }
+                if(this.y < 0) this.y = 0;
+                if(this.y+70 > c.height) this.y = c.height-70;
+            }
+        }
+        
+        function keyUpHandler(evt)
+        {
+            KEYCODES[evt.keyCode] = false;
+        }
+        function keyDownHandler(evt)
+        {
+            KEYCODES[evt.keyCode] = true;
+        }
+        window.addEventListener("keyup", keyUpHandler);
+        window.addEventListener("keydown", keyDownHandler);
+		window.addEventListener("keydown", function(e) 
+		{
+			// space and arrow keys
+			if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) 
+			{
+				e.preventDefault();
+			}
+		}, false);
+    </script> 
+    </body>
+</html>

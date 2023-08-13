@@ -1,0 +1,203 @@
+<html>
+    <body>
+        <canvas id = "myCanvas" width = "800" height = "450" style = "border:1px solid #000000"></canvas>
+        <script>
+            var can = document.getElementById("myCanvas");
+            var ctx = can.getContext("2d");
+            var tileX, tileY, X = 3, Y = 3, gridSize = 90, xOffset = 10, yOffset = 50, shuffleCtr = 0;
+            var gameComplete = false, start = false, shuffled = false, time = 0, fps = 20;
+            var TILE = [['A', 'B', 'C', 'D'], 
+                        ['E', 'F', 'G', 'H'],
+                        ['I', 'J', 'K', 'L'], 
+                        ['M', 'N', 'O', '']];
+            var winTILE = [['A', 'B', 'C', 'D'], 
+                           ['E', 'F', 'G', 'H'],
+                           ['I', 'J', 'K', 'L'], 
+                           ['M', 'N', 'O', '$']];
+            
+            setInterval(gameLoop, 1000/fps);
+            function gameLoop()
+            {
+                ctx.clearRect(0, 0, can.width, can.height);
+                if(shuffleCtr < 150)
+                    shuffleTile();
+                else
+                    shuffled = true;
+                if(!gameComplete)
+                    {
+                        if(start)
+                            time += 1/fps;
+                    }
+                else
+                    {
+                        ctx.font = "30px Arial";
+                        ctx.textAlign = "center";
+                        ctx.fillStyle = 'black';
+                        ctx.fillText("Game Completed", 600, 200);
+                        ctx.fillText("in " + time.toFixed(2) + " seconds", 600, 250);
+                    }
+                drawGrid();
+            }
+            function shuffleTile()
+            {
+                var temp;
+                var rand = Math.floor(Math.random() * 4);
+                if(TILE[X][Y] == '')
+                    {
+                        if(rand == 0)
+                            {
+                                //North
+                                if(Y+1 <= 3)
+                                    {   
+                                        temp = TILE[X][Y];
+                                        TILE[X][Y] = TILE[X][Y+1];
+                                        TILE[X][Y+1] = temp;
+                                        Y = Y+1;
+                                    }
+                            }
+                        else if(rand == 1)
+                        {
+                            //East
+                            if(X+1 <= 3)
+                                {
+                                    temp = TILE[X][Y];
+                                    TILE[X][Y] = TILE[X+1][Y];
+                                    TILE[X+1][Y] = temp;
+                                    X = X+1;
+                                }
+                        }
+                        else if(rand == 2)
+                            {
+                                //South
+                                if(Y-1 >= 0)
+                                    {
+                                        temp = TILE[X][Y];
+                                        TILE[X][Y] = TILE[X][Y-1];
+                                        TILE[X][Y-1] = temp;
+                                        Y = Y-1;                                    
+                                    }
+                            }
+                        else if(rand == 3)
+                            {
+                                //West
+                                if(X-1 >= 0)
+                                    {
+                                        temp = TILE[X][Y];
+                                        TILE[X][Y] = TILE[X-1][Y];
+                                        TILE[X-1][Y] = temp;
+                                        X = X-1;
+                                    }
+                            }
+                        shuffleCtr++;    
+                    }                
+            }
+            function moveTile()
+            {
+                start = true;
+                var temp;
+                //North
+                if(tileY+1 <= 3)
+                    {
+                        if(TILE[tileX][tileY+1] == '')
+                            {   
+                                temp = TILE[tileX][tileY];
+                                TILE[tileX][tileY] = TILE[tileX][tileY+1];
+                                TILE[tileX][tileY+1] = temp;
+                            }
+                    }
+                //East
+                if(tileX+1 <= 3)
+                    {
+                        if(TILE[tileX+1][tileY] == '')
+                            {
+                                temp = TILE[tileX][tileY];
+                                TILE[tileX][tileY] = TILE[tileX+1][tileY];
+                                TILE[tileX+1][tileY] = temp;
+                            }
+                    }
+                //South
+                if(tileY-1 >= 0)
+                    {
+                        if(TILE[tileX][tileY-1] == '')
+                            {
+                                temp = TILE[tileX][tileY];
+                                TILE[tileX][tileY] = TILE[tileX][tileY-1];
+                                TILE[tileX][tileY-1] = temp;
+                            }
+                    }
+                //West
+                if(tileX-1 >= 0)
+                    {
+                        if(TILE[tileX-1][tileY] == '')
+                            {
+                                temp = TILE[tileX][tileY];
+                                TILE[tileX][tileY] = TILE[tileX-1][tileY];
+                                TILE[tileX-1][tileY] = temp;
+                            }
+                    }
+                checkWin();
+            }
+            function checkWin()
+            {
+                var temp1 = "", temp2 = "";
+                for(var i = 0; i < 4; i++)
+                    {
+                        for(var j = 0; j < 4; j++)
+                            {
+                                if(TILE[i][j] != '')
+                                    temp1 += TILE[i][j];
+                                else
+                                    temp1 += '$';
+                                temp2 += winTILE[i][j];
+                            }
+                    }
+                if(temp1 == temp2)
+                    gameComplete = true;
+            }
+            function drawGrid()
+            {
+                ctx.font = "20px Arial";
+                ctx.textAlign = 'left';
+                ctx.fillStyle = 'black';
+                ctx.fillText("Time : " + time.toFixed(2), 10, 30);
+                for(var i = 0; i < 4; i++)
+                    {
+                        for(var j = 0; j < 4; j++)
+                            {
+                                
+                                ctx.fillStyle = '#747F8B';
+                                if((j == tileX) && (i == tileY))
+                                    ctx.fillStyle = '#172E3F';
+                                if(TILE[j][i] == '')
+                                    ctx.fillStyle = '#F2F0F2'; 
+                                ctx.fillRect(i*gridSize+xOffset, j*gridSize+yOffset, gridSize, gridSize);
+                                ctx.strokeRect(i*gridSize+xOffset, j*gridSize+yOffset, gridSize, gridSize);
+                                ctx.fillStyle = 'white'; 
+                                ctx.textAlign = 'center';
+                                ctx.font = "50px Arial";
+                                ctx.fillText(TILE[j][i], i*gridSize+xOffset*5.4, j*gridSize+yOffset*2.25);
+                            }
+                    }
+            }
+            function mousePos(evt)
+            {
+                var rect = can.getBoundingClientRect();
+                tileY = evt.clientX - rect.left-xOffset;
+                tileX = evt.clientY - rect.top-yOffset;
+                tileX = Math.floor(tileX/gridSize);
+                tileY = Math.floor(tileY/gridSize);
+                if(tileX < 0) tileX = -1;
+                if(tileX >= 4) tileX = -1;
+                if(tileY < 0) tileY = -1;
+                if(tileY >= 4) tileY = -1;
+            }
+            function detectClick(evt)
+            {
+                if((!gameComplete) && (tileX != -1) && (tileY != -1) && (shuffled))
+                    moveTile();
+            }
+            window.addEventListener("mousemove", mousePos);
+            window.addEventListener("click", detectClick);
+        </script>
+    </body>
+</html>

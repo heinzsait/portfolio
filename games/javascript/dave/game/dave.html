@@ -1,0 +1,229 @@
+<style> @font-face {font-family: myFont; src: url(Assets/font.ttf);}</style>
+<canvas id = "myCanvas" width = "1280" height = "786" ></canvas>
+<script src = "Scripts/player.js"></script>
+<script src = "Scripts/platform.js"></script>
+<script src = "Scripts/pickups.js"></script>
+<script src = "Scripts/obstacles.js"></script>
+<script src = "Scripts/enemies.js"></script>
+<script>
+
+    var can = document.getElementById("myCanvas");
+    var ctx = can.getContext("2d");
+    var fps = 60, delay = 1000/fps, dt = 1/fps, time = 0;
+    
+    var xView = 700, viewOffsetX = 450;
+    var roomWidth = 3000;
+    var splash = new Image();
+    splash.src = "Assets/splash.png";
+    var splashAnimationTimer = 0, splashFrameIndex = 0;
+    
+    var leftFlag, rightFlag, fireFlag, jumpFlag, startFlag;
+    var playerStartX = 100, playerStartY = 611, score = 0, start = false, win = false, gameOver = false; 
+    var player = new c_Player(playerStartX, playerStartY, 35, 53, "#ECF0F1");
+    
+    //Level Map
+    var platforms = [];
+    var obstacles = [];
+    var pickUps = [];
+    var enemies = [];
+    var g_GridSize = 60;
+    
+    var levelMap =[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+                   1,7,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,12,0,8,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,13,0,0,0,0,0,0,0,11,1,1,
+                   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+                   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,1,5,5,5,0,0,5,5,0,5,5,0,0,
+                   1,2,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1,1,0,0,1,1,1,1,1,1,1,1,1,0,0,1,5,0,5,0,5,0,0,0,5,0,5,0,
+                   1,0,0,0,0,0,0,0,2,2,2,0,0,0,1,0,0,0,5,0,0,0,1,0,0,1,1,0,8,1,0,0,0,0,1,0,0,1,5,5,5,0,5,0,0,0,5,5,0,0,
+                   1,0,2,2,0,0,0,0,0,1,0,9,0,10,1,0,2,2,2,2,2,0,1,0,1,0,0,0,0,1,0,0,1,0,1,0,1,1,5,0,0,0,5,0,0,0,5,0,5,0,
+                   1,0,0,0,0,0,0,0,0,1,0,2,0,0,1,0,6,6,6,6,6,0,1,0,1,0,1,1,0,1,0,1,1,0,0,0,0,1,5,0,0,0,0,5,5,0,5,0,5,0,
+                   1,0,0,0,2,2,2,0,7,1,0,0,0,2,1,0,0,0,0,0,0,0,1,0,0,0,1,8,0,0,0,8,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,
+                   1,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
+                   1,1,1,3,3,3,3,3,3,1,3,3,3,3,1,4,4,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3,3];
+        
+    initialize();
+    setInterval(gameLoop, delay);    
+    function gameLoop()
+    {
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, can.width, can.height); 
+        if(start)
+            {
+                if(!gameOver && !win)
+                    {
+                        if(!player.dead)
+                            player.move();        
+                        updateCamera();         
+                        for(var i = 0; i < platforms.length; i++)
+                            platforms[i].draw();
+                        for(var i = 0; i < obstacles.length; i++)
+                            obstacles[i].draw();
+                        for(var i = 0; i < pickUps.length; i++)
+                            pickUps[i].draw();
+                        for(var i = 0; i < enemies.length; i++)
+                            {
+                                if(enemies[i] != null)
+                                    {
+                                        if(enemies[i].speedTimer % enemies[i].speed == 0)
+                                            enemies[i].move();
+                                        enemies[i].draw();   
+                                    }
+                                if(enemies[i].delete)
+                                    {
+                                        enemies.splice(i, 1);
+                                        score += 500;                        
+                                    }
+                            }
+                        player.draw();                
+                    }
+                drawUI();
+            }
+        else
+            {
+                if(startFlag)
+                    start = true;
+                
+                if(splashAnimationTimer > 15)
+                    {
+                        splashAnimationTimer = 0;
+                        if(splashFrameIndex < 3)
+                            splashFrameIndex++;
+                        else
+                            splashFrameIndex = 0;
+                    }
+                splashAnimationTimer += 2;
+                ctx.drawImage(splash, splashFrameIndex*300, 0, 300, 128, can.width/2-300, can.height/2-256, 600, 256); 
+                ctx.font = "70px myFont";
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#e7e7e7";
+                ctx.fillText("Press enter to start", can.width/2, can.height/2+200);
+            }
+    }
+    
+    function initialize()
+    {
+        var j = 0, yOffset = g_GridSize;
+        for(var k = 0; k < levelMap.length; k++)
+            {
+                if(k != 0 && k % 50 == 0)
+                    j++;
+                var i = k % 50;
+                
+                if(levelMap[k] == 1)
+                    platforms.push(new c_Platform(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 1));
+                else if(levelMap[k] == 2)
+                    platforms.push(new c_Platform(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize-20, 2));
+                else if(levelMap[k] == 3)
+                    obstacles.push(new c_Obstacles(i * g_GridSize, yOffset + (j * g_GridSize) + 18, g_GridSize, g_GridSize, 3));
+                else if(levelMap[k] == 4)
+                    obstacles.push(new c_Obstacles(i * g_GridSize, yOffset + (j * g_GridSize) + 18, g_GridSize, g_GridSize, 4));
+                else if(levelMap[k] == 5)
+                    obstacles.push(new c_Obstacles(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 5));
+                else if(levelMap[k] == 6)
+                    pickUps.push(new c_PickUps(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 6));
+                else if(levelMap[k] == 7)
+                    pickUps.push(new c_PickUps(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 7));
+                else if(levelMap[k] == 8)
+                    pickUps.push(new c_PickUps(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 8));
+                else if(levelMap[k] == 9)
+                    pickUps.push(new c_PickUps(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 9));
+                else if(levelMap[k] == 10)
+                    pickUps.push(new c_PickUps(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 10));
+                else if(levelMap[k] == 11)
+                    pickUps.push(new c_PickUps(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 11));
+                else if(levelMap[k] == 12)
+                    enemies.push(new c_Enemies(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 12));
+                else if(levelMap[k] == 13)
+                    enemies.push(new c_Enemies(i * g_GridSize, yOffset + (j * g_GridSize), g_GridSize, g_GridSize, 13));    
+            }
+    }
+    
+    function updateCamera()
+    {
+        if(player.x - xView + viewOffsetX > can.width)
+            xView = player.x + viewOffsetX - can.width;
+        else if(player.x - xView < viewOffsetX)
+            xView = player.x - viewOffsetX;
+        if(xView + can.width > roomWidth)
+            xView = roomWidth - can.width;
+        if(xView < 0)
+            xView = 0;
+    }
+    
+    function drawUI()
+    {
+        if(!gameOver && !win)
+            {
+                ctx.font = "40px myFont";
+                ctx.textAlign = "left";
+                ctx.fillStyle = "#e7e7e7";
+                ctx.fillText("Score : " + score, 20, 45);
+                var img = new Image();
+                img.src = "Assets/spritesheet.png";
+                for(var i = 0; i < player.life; i++)
+                    ctx.drawImage(img, 192, 384, 64, 64, can.width-(i*64) - 64, 0, 64, 64);
+                ctx.fillStyle = "black";
+                ctx.fillRect(0, 719, can.width, 20);
+                ctx.fillStyle = "#e7e7e7";
+                if(player.key)
+                    {
+                        ctx.textAlign = "center";
+                        ctx.fillText("Go thru the door", can.width/2, can.height-20);
+                        ctx.drawImage(img, 64, 448, 64, 64, can.width/2 - 280, can.height - 64, 50, 50);
+                        ctx.drawImage(img, 64, 448, 64, 64, can.width/2 + 230, can.height - 64, 50, 50);
+                    }
+                if(player.gun)
+                    {
+                        ctx.textAlign = "center";
+                        ctx.drawImage(img, 192, 320, 64, 64, can.width - 75, can.height - 64, 60, 60);
+                        ctx.fillText("Gun", can.width-140, can.height-20);
+                    }
+            }
+        else if(gameOver)
+            {
+                ctx.font = "70px myFont";
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#e7e7e7";
+                ctx.fillText("Game Over", can.width/2, can.height/2);
+            }
+        else if(win)
+            {
+                ctx.font = "70px myFont";
+                ctx.textAlign = "center";                
+                ctx.fillStyle = "#e7e7e7";
+                ctx.fillText("level complete", can.width/2, can.height/2);
+            }
+    }
+    
+    function collisionCheck(A, B)
+    {
+        if ((A.x < B.x + B.width) && (A.x + A.width > B.x) && (A.y < B.y + B.height) && (A.height + A.y > B.y)) 
+            return true;
+        else 
+            return false;
+    }
+    window.addEventListener("keydown", function(evt)
+    {
+        if(evt.keyCode == 37) leftFlag = true;
+        if(evt.keyCode == 39) rightFlag = true;
+        if(evt.keyCode == 17) fireFlag = true;      
+        if(evt.keyCode == 32 || evt.keyCode == 38) jumpFlag = true;
+        if(evt.keyCode == 13) startFlag = true;   
+		
+    });
+    window.addEventListener("keyup", function(evt)
+    {
+        if(evt.keyCode == 37) leftFlag = false;
+        if(evt.keyCode == 39) rightFlag = false;
+        if(evt.keyCode == 17) fireFlag = false;
+        if(evt.keyCode == 32 || evt.keyCode == 38) jumpFlag = false;
+        if(evt.keyCode == 13) startFlag = false;
+    });
+	
+	window.addEventListener("keydown", function(e) 
+	{
+		if([32, 37, 17, 39, 40, 38].indexOf(e.keyCode) > -1) 
+		{
+			e.preventDefault();
+		}
+	}, false);
+</script>

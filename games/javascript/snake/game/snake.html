@@ -1,0 +1,473 @@
+<html>
+    <body>
+        <canvas id = "myCanvas" width = "800" height = "450"></canvas>
+        <script>
+            var can = document.getElementById("myCanvas");
+            var ctx = can.getContext("2d");
+            var fps = 60, start = false, retry = false;
+            var KEYCODES = [];                
+            
+            var powerUp, powerUpSpawnTimer = 5, timer = 0;
+            
+            var Snake1 = new c_Snake(can.width/2 - 200, can.height/2 + 100, "#4A8C08", "#9DF21D", 1);
+            Snake1.initializeposition();
+            
+            var Snake2 = new c_Snake(can.width/2 + 200, can.height/2 + 100, "#585D61", "#949082", 2);
+            Snake2.initializeposition();
+            
+            setInterval(gameLoop, 1000/fps);
+            function gameLoop()
+            {
+                ctx.fillStyle = "#F5F2F2";
+                ctx.fillRect(0, 0, can.width, can.height);
+                
+                if(start)
+                   {
+                        collisionDetection();
+                        cheatCodes();
+                        if(!Snake1.dead)
+                            {
+                                for(var i = 0; i < Snake1.speed; i++)
+                                    Snake1.move();
+                                Snake1.draw();
+                            }
+                        if(!Snake2.dead)
+                            {
+                                for(var i = 0; i < Snake2.speed; i++)
+                                    Snake2.move();
+                                Snake2.draw();
+                            }
+                        if(powerUp != null)
+                            {
+                                if(!powerUp.picked)
+                                    {
+                                        powerUp.draw();
+                                    }
+                            }
+                        gameController();
+                    }
+                else
+                    {
+                        gameMenu();
+                    }    
+            }
+            
+            function gameController()
+            {
+                timer += 1/fps;
+                if(timer > powerUpSpawnTimer)
+                    {
+                        timer = 0;
+                        do
+                            {
+                                var x = Math.floor(Math.random()*can.width-50) + 50;
+                                var y = Math.floor(Math.random()*can.height-50) + 50;
+                            }while(checkSpwanArea(x, y));
+                        
+                        powerUp = new c_PowerUps(x, y, Math.floor(Math.random()*4));
+                    }
+                //Draw UI
+                ctx.font = "40px Calibri";
+                ctx.fillStyle = "grey";
+                ctx.textAlign = "left";
+                ctx.fillText(Snake1.score, 15, 40);                                
+                ctx.textAlign = "right";
+                ctx.fillText(Snake2.score, can.width-15, 40);
+                
+                //Win
+                if(Snake1.dead)
+                    {
+                        ctx.font = "40px Calibri";
+                        ctx.fillStyle = "grey";
+                        ctx.textAlign = "center";
+                        ctx.fillText("Player 2 Win", can.width/2, 40);
+                        ctx.fillStyle = "white";
+                        ctx.fillRect(can.width/2-75, can.height/2-35, 150, 70);
+                        ctx.fillStyle = "grey";
+                        ctx.font = "40px Calibri"; 
+                        ctx.fillText("Retry", can.width/2, can.height/2+10);
+                        retry = true;
+                    }
+                if(Snake2.dead)
+                    {
+                        ctx.font = "40px Calibri";
+                        ctx.fillStyle = "grey";
+                        ctx.textAlign = "center";
+                        ctx.fillText("Player 1 Win", can.width/2, 40);
+                        ctx.fillStyle = "white";
+                        ctx.fillRect(can.width/2-75, can.height/2-35, 150, 70);
+                        ctx.fillStyle = "grey";
+                        ctx.font = "40px Calibri"; 
+                        ctx.fillText("Retry", can.width/2, can.height/2+10);
+                        retry = true;
+                    }
+            }
+            
+            function checkSpwanArea(l_x, l_y)
+            {
+                var flag = false;
+                for(var i = 0; i < Snake2.pos.length; i++)
+                    {
+                        if((Snake2.pos[i][0] < l_x+10) && (Snake2.pos[i][0]+Snake2.size > l_x-10) && (Snake2.pos[i][1] < l_y+10) && (Snake2.pos[i][1]+Snake2.size > l_y-10))
+                            {
+                                flag = true;
+                            }
+                    }
+                for(var i = 0; i < Snake1.pos.length; i++)
+                    {
+                        if((Snake1.pos[i][0] < l_x+10) && (Snake1.pos[i][0]+Snake1.size > l_x-10) && (Snake1.pos[i][1] < l_y+10) && (Snake1.pos[i][1]+Snake1.size > l_y-10))
+                            {
+                                flag = true;
+                            }
+                    }
+                return flag;
+            }
+            
+            function gameMenu()
+            {
+                ctx.font = "100px Calibri";
+                ctx.fillStyle = "grey";
+                ctx.textAlign = "center";
+                ctx.fillText("SNAKES", can.width/2, can.height/2 - 50);
+                ctx.fillStyle = "white";
+                ctx.fillRect(can.width/2-75, can.height/2, 150, 70);
+                ctx.fillStyle = "grey";
+                ctx.font = "45px Calibri";                
+                ctx.fillText("Start", can.width/2, can.height/2 + 50);
+            }
+            
+            function c_Snake(l_x, l_y, l_colorHead, l_colorBody, l_playerID)
+            {
+                this.x = l_x;
+                this.y = l_y;
+                this.size = 10;
+                this.playerID = l_playerID;
+                this.colorHead = l_colorHead;
+                this.colorBody = l_colorBody;
+                this.bodylength = 7;
+                this.inc = 1;
+                this.speed = 2;
+                this.posRaw = [];
+                this.pos = [];
+                this.dir = "north";
+                this.score = 0;
+                this.collideSnake = false;
+                this.dead = false;
+                var updateBodyflag = true;
+                      
+                var keycodes = [];
+                if(this.playerID == 1)
+                    keycodes = [65, 87, 68, 83];
+                else if(this.playerID == 2)
+                    keycodes = [37, 38, 39, 40];
+                
+                this.initializeposition = function()
+                {                   
+                    this.x = l_x;
+                    this.y = l_y;
+                    this.posRaw = [];
+                    this.pos = [];
+                    this.dir = "north";
+                    for(var i = 0; i < this.bodylength*this.size; i++)
+                    {
+                        this.posRaw.push([this.x, this.y + i]);
+                        if((i % (10)) == 0)
+                            {
+                                this.pos.unshift([this.posRaw[i][0], this.posRaw[i][1]]);   
+                            }
+                    }
+                }     
+                
+                this.move = function()
+                {
+                    if((KEYCODES[keycodes[0]]) && (this.dir != "east")) 
+                        {
+                            this.x -= this.inc;
+                            this.dir = "west";
+                            updateBodyflag = true;
+                        }
+                    if((KEYCODES[keycodes[1]]) && (this.dir != "south")) 
+                        {
+                            this.y -= this.inc;
+                            this.dir = "north";
+                            updateBodyflag = true;
+                        }
+                    if((KEYCODES[keycodes[2]]) && (this.dir != "west")) 
+                        {
+                            this.x += this.inc;
+                            this.dir = "east";
+                            updateBodyflag = true;
+                        }                    
+                    if((KEYCODES[keycodes[3]]) && (this.dir != "north")) 
+                        {
+                            this.y += this.inc;
+                            this.dir = "south";
+                            updateBodyflag = true;
+                        }
+                    if(updateBodyflag)
+                        {
+                            updateBodyflag = false;
+                            this.updateBody();   
+                        } 
+                    
+                    if(this.x > can.width) this.x = 0;
+                    if(this.x < 0) this.x = can.width;
+                    if(this.y > can.height) this.y = 0;
+                    if(this.y < 0) this.y = can.height;
+                    
+                    if(this.collideSnake)
+                        {
+                            this.bodylength--;                            
+                            this.initializeposition();
+                            this.collideSnake = false;
+                        }                    
+                    if(this.bodylength == 1)
+                        {
+                            this.dead = true;
+                        }
+                }
+                
+                this.updateBody = function()
+                {
+                    this.posRaw.unshift([this.x, this.y]);
+                    for(var i = 0; i < this.bodylength*this.size; i++)
+                        {
+                            if(((i % (10))==0) && (this.posRaw != null))
+                                {
+                                    this.pos.unshift([this.posRaw[i][0], this.posRaw[i][1]]);   
+                                }
+                            if(this.pos.length > this.bodylength)
+                                {
+                                    this.pos.pop();
+                                }
+                        }
+                    this.pos.reverse();
+                } 
+                
+                this.draw = function()
+                {
+                    for(var i = 1; i < this.pos.length; i++)
+                        {
+                            ctx.fillStyle = this.colorBody;
+                            ctx.fillRect(this.pos[i][0], this.pos[i][1], this.size, this.size); 
+                            ctx.strokeStyle = this.colorHead;
+                            ctx.strokeRect(this.pos[i][0], this.pos[i][1], this.size, this.size); 
+                        }
+                    ctx.fillStyle = this.colorHead;
+                    ctx.fillRect(this.x, this.y, this.size, this.size);
+                }
+            }
+            
+            function c_PowerUps(l_x, l_y, l_type)
+            {
+                this.x = l_x;
+                this.y = l_y;
+                this.size = 20;
+                this.Type = l_type;
+                this.picked = false;
+                var color;
+                if(this.Type == 0)
+                    color = "#1B2858";
+                else if(this.Type == 1)
+                    color = "#F3BF0B";
+                else if(this.Type == 2)
+                    color = "#8C0F17";
+                else if(this.Type == 3)
+                    color = "#A5D967";
+                
+                this.draw = function()
+                {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size/2, 0, 2*Math.PI);
+                    ctx.closePath();
+                    ctx.fill();
+                }                
+            }
+            
+            function collisionDetection()
+            {
+                //Snake Collision
+                if((!Snake1.dead) && (!Snake2.dead))
+                    {
+                        //Snake 1
+                        for(var i = 0; i < Snake2.pos.length; i++)
+                            {
+                                var dx = Snake2.pos[i][0] - Snake1.x;
+                                var dy = Snake2.pos[i][1] - Snake1.y;
+                                var distance = Math.sqrt((dx * dx) + (dy * dy)); 
+                                if ((Math.floor(distance) < (Snake2.size/2 + Snake1.size/2)))
+                                    {
+                                        Snake1.collideSnake = true;
+                                    }
+                            }
+                        for(var i = 4; i < Snake1.pos.length; i++)
+                            {
+                                var dx = Snake1.pos[i][0] - Snake1.pos[0][0];;
+                                var dy = Snake1.pos[i][1] - Snake1.pos[0][1];;
+                                var distance = Math.sqrt((dx * dx) + (dy * dy)); 
+                                if(Math.floor(distance) < (Snake1.size + 1))
+                                    {
+                                        Snake1.collideSnake = true;
+                                    }                                 
+                            }
+                        //Snake 2                        
+                        for(var i = 0; i < Snake1.pos.length; i++)
+                            {
+                                var dx = Snake1.pos[i][0] - Snake2.x;
+                                var dy = Snake1.pos[i][1] - Snake2.y;
+                                var distance = Math.sqrt((dx * dx) + (dy * dy)); 
+                                if ((Math.floor(distance) < (Snake1.size/2 + Snake2.size/2)))
+                                    {
+                                        Snake2.collideSnake = true;
+                                    }
+                            }
+                        for(var i = 4; i < Snake2.pos.length; i++)
+                            {
+                                var dx = Snake2.pos[i][0] - Snake2.pos[0][0];
+                                var dy = Snake2.pos[i][1] - Snake2.pos[0][1];
+                                var distance = Math.sqrt((dx * dx) + (dy * dy)); 
+                                if(Math.floor(distance) < (Snake2.size + 1))
+                                    {
+                                        Snake2.collideSnake = true;
+                                    }                                    
+                            }
+                    }
+                
+                //PowerUps collision                
+                if(powerUp != null)
+                    {
+                        //Snake 1
+                        if(!Snake1.dead)
+                            {
+                                var dx = powerUp.x - Snake1.x;
+                                var dy = powerUp.y - Snake1.y;
+                                var distance = Math.sqrt((dx * dx) + (dy * dy)); 
+                                if ((Math.floor(distance) < (Snake1.size/2 + powerUp.size/2)) && (!powerUp.picked))
+                                    {
+                                        powerUp.picked = true;
+                                        if(powerUp.Type == 0)
+                                            {
+                                                if(Snake1.speed < 7)
+                                                    Snake1.speed += 1;
+                                                Snake1.score += 5;
+                                            }
+                                        else if(powerUp.Type == 1)
+                                            {
+                                                if(Snake1.speed > 1)
+                                                    Snake1.speed -= 1;
+                                                Snake1.score += 5;
+                                            }
+                                        else if(powerUp.Type == 2)
+                                            {
+                                                Snake1.bodylength -= 1;
+                                                Snake1.score += 5;
+                                            }
+                                        else if(powerUp.Type == 3)
+                                            {
+                                                Snake1.bodylength += 3;
+                                                Snake1.score += 10;
+                                            }
+                                    } 
+                            }
+                       
+                        //Snake 2
+                        if(!Snake2.dead)
+                            {
+                                var dx = powerUp.x - Snake2.x;
+                                var dy = powerUp.y - Snake2.y;
+                                var distance = Math.sqrt((dx * dx) + (dy * dy)); 
+                                if ((Math.floor(distance) < (Snake2.size/2 + powerUp.size/2)) && (!powerUp.picked))
+                                    {
+                                        powerUp.picked = true;
+                                        if(powerUp.Type == 0)
+                                            {
+                                                if(Snake2.speed < 7)
+                                                    Snake2.speed += 1;
+                                                Snake2.score += 5;
+                                            }
+                                        else if(powerUp.Type == 1)
+                                            {
+                                                if(Snake2.speed > 1)
+                                                    Snake2.speed -= 1;
+                                                else
+                                                    Snake2.speed = 1;
+                                                Snake2.score += 5;
+                                            }
+                                        else if(powerUp.Type == 2)
+                                            {
+                                                Snake2.bodylength -= 1;
+                                                Snake2.score += 5;
+                                            }
+                                        else if(powerUp.Type == 3)
+                                            {
+                                                Snake2.bodylength += 3;
+                                                Snake2.score += 10;
+                                            }
+                                    } 
+                            }                        
+                    }                    
+            }
+            
+            function cheatCodes()
+            {
+                if(KEYCODES[49])
+                    {
+                        Snake2.bodylength++; 
+                        Snake2.updateBody();
+                    }
+                if(KEYCODES[50])
+                    {
+                        Snake2.bodylength--; 
+                        Snake2.updateBody();
+                    }
+                if(KEYCODES[51])
+                    Snake2.speed = 6; 
+                if(KEYCODES[52])
+                    Snake2.speed = 1; 
+            }
+            
+            function keyUpHandler(evt)
+            {
+                KEYCODES[evt.keyCode] = false;
+            }
+            function keyDownHandler(evt)
+            {
+                KEYCODES[evt.keyCode] = true;
+            }
+            function mouseClickHandler(evt)
+            {
+                var rect = can.getBoundingClientRect();
+                var mouseX = evt.clientX - rect.left;
+                var mouseY = evt.clientY - rect.top; 
+                if(!start)
+                    {
+                        if((mouseX > can.width/2-75)&&(mouseX < can.width/2+75)&&(mouseY > can.height/2)&&(mouseY < can.height/2+70))
+                            {
+                                start = true;
+                            }
+                    }
+                if(retry)
+                    {
+                        if((mouseX > can.width/2-75)&&(mouseX < can.width/2+75)&&(mouseY > can.height/2-35)&&(mouseY < can.height/2+35))
+                            {
+                                location.reload();
+                            }
+                    }
+            }
+            window.addEventListener("keyup", keyUpHandler);
+            window.addEventListener("keydown", keyDownHandler);
+            window.addEventListener("click", mouseClickHandler);
+			
+			window.addEventListener("keydown", function(e) 
+			{
+				// space and arrow keys
+				if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) 
+				{
+					e.preventDefault();
+				}
+			}, false);
+			
+        </script>
+    </body>
+</html>

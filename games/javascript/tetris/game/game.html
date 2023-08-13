@@ -1,0 +1,140 @@
+<html>
+    <style> @font-face {font-family: myFont; src: url(font.ttf);} </style>
+    <body>
+        <canvas id = "myCanvas" width = "672" height = "544"></canvas>
+        <script src = "tetromino.js"></script>
+        <script>
+            var can = document.getElementById("myCanvas");
+            var ctx = can.getContext("2d");
+            var fps = 60, delay = 1000/fps;
+            var KEYCODES = [];
+            var blockSize = 32;
+            
+            var stuckArray = [[6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,0,0,0,0,0,0,0,0,0,0,6],
+                              [6,6,6,6,6,6,6,6,6,6,6,6]];
+            
+            var type = ["O", "T", "S", "Z", "I", "J", "L"];
+            var colors = ["#D90B34", "#8F0FD5", "#0261D5", "#00D925", "#E4DE00", "#252A4F"];
+            var tetromino = null, tetrominoNext = null;
+            var upNext = {TYPE : type[Math.floor(Math.random()*7)], COLOR : Math.floor(Math.random()*5)};
+            var gameOver = false, score = 0;
+            
+            setInterval(gameLoop, delay);
+            function gameLoop()
+            {
+                ctx.fillStyle = "#F2F0F2";
+                ctx.fillRect(0, 0, can.width, can.height);
+                if(tetromino != null)
+                if(!tetromino.dead)
+                    {
+                        tetromino.move();
+                        tetromino.draw();
+                    }
+                else
+                    {
+                        if(!gameOver)
+                            {
+                                tetromino = new c_tetromino(128, 0, upNext.TYPE, upNext.COLOR);
+                                upNext = {TYPE : type[Math.floor(Math.random()*7)], COLOR : Math.floor(Math.random()*5)};
+                                tetrominoNext = new c_tetromino(480, 360, upNext.TYPE, upNext.COLOR);
+                            }
+                    }                    
+                else
+                    {
+                        if(!gameOver)
+                            {
+                                tetromino = new c_tetromino(128, 0, upNext.TYPE, upNext.COLOR);
+                                upNext = {TYPE : type[Math.floor(Math.random()*7)], COLOR : Math.floor(Math.random()*5)};
+                                tetrominoNext = new c_tetromino(480, 360, upNext.TYPE, upNext.COLOR);
+                            }
+                    }               
+                tetrominoNext.draw();
+                drawStuckArray();
+            }
+            
+            function drawStuckArray()
+            {
+                for(var i = 0; i < 17; i++)
+                    {
+                        var filled = true;    
+                        for(var j = 0; j < 12; j++)
+                            {
+                                if(stuckArray[i][j] != 0)
+                                    {
+                                        ctx.fillStyle = colors[stuckArray[i][j]-1];
+                                        ctx.fillRect((j*blockSize), (i*blockSize), blockSize, blockSize);
+                                        if((i == 0) && (j != 0) && (j != 11))
+                                            {
+                                                gameOver = true;
+                                            }
+                                    }
+                                if(stuckArray[i][j] == 0)
+                                    {
+                                        if(i != 16)
+                                        {
+                                            filled = false; 
+                                        }
+                                    }  
+                            }
+                        if(filled)
+                                {
+                                    if(i != 16)
+                                        {
+                                            stuckArray.splice(i, 1);
+                                            stuckArray.unshift([6,0,0,0,0,0,0,0,0,0,0,6]); 
+                                            score += 100;
+                                        }
+
+                                }
+                    }
+                ctx.fillStyle = "#484F57";
+                ctx.font = "50px myFont";
+                ctx.textAlign = "center";
+                ctx.fillText("Score", 530, 96);
+                ctx.fillText(score, 530, 160);
+                ctx.fillText("Next", 530, 500);
+                
+                if(gameOver)
+                    {
+                        ctx.font = "80px myFont";                        
+                        ctx.strokeStyle = "#F2F0F2";
+                        ctx.lineWidth = 10;
+                        ctx.strokeText("Game Over", can.width/2, can.height/2);
+                        ctx.fillText("Game Over", can.width/2, can.height/2);
+                    }               
+            }
+            
+            window.addEventListener("keydown", function(evt)
+            {
+                KEYCODES[evt.keyCode] = true;
+            });
+            window.addEventListener("keyup", function(evt)
+            {
+                KEYCODES[evt.keyCode] = false;
+            });
+			window.addEventListener("keydown", function(e) 
+			{
+				// space and arrow keys
+				if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) 
+				{
+					e.preventDefault();
+				}
+			}, false);
+        </script>
+    </body>
+</html>

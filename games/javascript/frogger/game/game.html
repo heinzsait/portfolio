@@ -1,0 +1,957 @@
+<style> @font-face {font-family: myFont; src: url(Assets/font.ttf);}</style>
+<canvas id = "myCanvas" width = "675" height = "720"></canvas>
+<script>
+
+    var can = document.getElementById("myCanvas");
+    var ctx = can.getContext("2d");
+    var fps = 60, delay = 1000/fps, dt = 1/fps, time = 0, gameOver = false, start = false;
+    var sprite = new Image();
+    sprite.src = "Assets/spritesheet.png";
+    var msg = "Game Over";
+    
+    var leftFlag, rightFlag, downFlag, upFlag;
+    var startX = can.width/2-22.5, startY = 585;
+    var frog = new c_Frog(startX, startY);
+    
+    var log = [];
+    var turtle = [];
+    var traffic = [];
+    
+    var water = new c_Water(0, 90, can.width, 225);
+    var goal = [];
+    goal.push(new c_Goal(22, 35, 45, 45));
+    goal.push(new c_Goal(167, 35, 45, 45));
+    goal.push(new c_Goal(312, 35, 45, 45));
+    goal.push(new c_Goal(455, 35, 45, 45));
+    goal.push(new c_Goal(600, 35, 45, 45));
+    
+    var land = [];
+    land.push(new c_Land(22+70, 35, 45, 45));
+    land.push(new c_Land(167+70, 35, 45, 45));
+    land.push(new c_Land(312+70, 35, 45, 45));
+    land.push(new c_Land(455+70, 35, 45, 45));
+    
+    setInterval(gameLoop, delay);
+    function gameLoop()
+    {
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, can.width, can.height);
+        if(start)
+        {        
+        water.draw();
+        drawBackground();
+        gameController();
+        collisionDetection();
+            if(!gameOver)
+        frog.move();      
+        for(var i = 0; i < log.length; i++)
+            {
+                if(log[i].dead)
+                    {
+                        log.splice(i, 1);
+                    }
+                log[i].move();
+                log[i].draw();
+            }
+        for(var i = 0; i < traffic.length; i++)
+            {
+                if(traffic[i].dead)
+                    {
+                        traffic.splice(i, 1);
+                    }
+                traffic[i].move();
+                traffic[i].draw();
+            }
+        for(var i = 0; i < turtle.length; i++)
+            {
+                if(turtle[i].dead)
+                    {
+                        turtle.splice(i, 1);
+                    }
+                turtle[i].move();
+                turtle[i].draw();
+            }
+        for(var i = 0; i < goal.length; i++)
+            {
+                goal[i].draw();
+            }
+        frog.draw();
+        if(gameOver)
+            {
+                ctx.font = "70px myFont";      
+                ctx.textAlign = "center";
+                ctx.strokeStyle = "#5f5f5f";
+                ctx.lineWidth = 7;
+                ctx.strokeText(msg, can.width/2, can.height/2 + 135);
+                ctx.fillStyle = "#F2F0F2";
+                ctx.fillText(msg, can.width/2, can.height/2 + 135);
+            }   
+        }
+        else
+            {
+                ctx.font = "30px myFont";      
+                ctx.textAlign = "center";
+                ctx.strokeStyle = "#5f5f5f";
+                ctx.lineWidth = 7;
+                ctx.strokeText("Press enter to play", can.width/2, can.height/2 + 100);
+                ctx.fillStyle = "#F2F0F2";
+                ctx.fillText("Press enter to play", can.width/2, can.height/2 + 100);                
+                ctx.drawImage(sprite, 0, 0, 720, 100, 75, can.height/2-100, 540, 75);
+            }
+    }
+    
+    var time = 0, spawnTime = -1, waveRate = 0,
+        time2 = 0, spawnTime2 = -1, waveRate2 = 0,
+        time3 = 0, spawnTime3 = -1, waveRate3 = 0,
+        time4 = 0, spawnTime4 = -1, waveRate4 = 0,
+        time5 = 0, spawnTime5 = -1, waveRate5 = 0,
+        time6 = 0, spawnTime6 = -1, waveRate6 = 0,
+        time7 = 0, spawnTime7 = -1, waveRate7 = 0,
+        time8 = 0, spawnTime8 = -1, waveRate8 = 0,
+        time9 = 0, spawnTime9 = -1, waveRate9 = 0,
+        time10 = 0, spawnTime10 = -1, waveRate10 = 0;
+    function gameController()
+    {
+        time += dt;
+        if(time > spawnTime)
+            {
+                traffic.push(new c_Traffic(-45, 540, 45, 45, 1, 1, 1));
+                waveRate++;
+                time = 0;
+                if(waveRate > 2)
+                    {
+                        spawnTime = 6+Math.floor(Math.random()*2);
+                        waveRate = 0;
+                    }
+                else
+                    {
+                        spawnTime = 3;
+                    }
+            }
+        
+        time2 += dt;
+        if(time2 > spawnTime2)
+            {
+                traffic.push(new c_Traffic(can.width, 495, 45, 45, -1, 1, 2));
+                waveRate2++;
+                time2 = 0;
+                if(waveRate2 > 2)
+                    {
+                        spawnTime2 = 6+Math.floor(Math.random()*2);
+                        waveRate2 = 0;
+                    }
+                else
+                    {
+                        spawnTime2 = 3;
+                    }
+            }
+        
+        time3 += dt;
+        if(time3 > spawnTime3)
+            {
+                traffic.push(new c_Traffic(-45, 450, 45, 45, 1, 2, 3));
+                waveRate3++;
+                time3 = 0;
+                if(waveRate3 > 2)
+                    {
+                        spawnTime3 = 4+Math.floor(Math.random()*1);
+                        waveRate3 = 0;
+                    }
+                else
+                    {
+                        spawnTime3 = 2;
+                    }
+            }
+        
+        time4 += dt;
+        if(time4 > spawnTime4)
+            {
+                traffic.push(new c_Traffic(can.width, 405, 45, 45, -1, 3, 4));
+                waveRate4++;
+                time4 = 0;
+                if(waveRate4 > 2)
+                    {
+                        spawnTime4 = 4+Math.floor(Math.random()*1);
+                        waveRate4 = 0;
+                    }
+                else
+                    {
+                        spawnTime4 = 1.5;
+                    }
+            }
+        
+        time5 += dt;
+        if(time5 > spawnTime5)
+            {
+                traffic.push(new c_Traffic(-90, 360, 90, 45, 1, 2, 5));
+                waveRate5++;
+                time5 = 0;
+                if(waveRate5 > 1)
+                    {
+                        spawnTime5 = 4+Math.floor(Math.random()*1);
+                        waveRate5 = 0;
+                    }
+                else
+                    {
+                        spawnTime5 = 2;
+                    }
+            }
+        
+        time6 += dt;
+        if(time6 > spawnTime6)
+            {
+                if(Math.random() >= 0.5)
+                    var type = 1;
+                else
+                    var type = 2;
+                turtle.push(new c_Turtle(can.width, 270, 135, 45, -1, 1, type));
+                waveRate6++;
+                time6 = 0;
+                if(waveRate6 > 0)
+                    {
+                        spawnTime6 = 4+Math.floor(Math.random()*2);
+                        waveRate6 = 0;
+                    }
+                else
+                    {
+                        spawnTime6 = 3;
+                    }
+            }
+        
+        time7 += dt;
+        if(time7 > spawnTime7)
+            {
+                log.push(new c_movingPlatform(-173, 225, 173, 45, 1, 1));
+                waveRate7++;
+                time7 = 0;
+                if(waveRate7 > 1)
+                    {
+                        spawnTime7 = 5+Math.floor(Math.random()*2);
+                        waveRate7 = 0;
+                    }
+                else
+                    {
+                        spawnTime7 = 3+Math.floor(Math.random()*1);
+                    }
+            }
+        
+        time8 += dt;
+        if(time8 > spawnTime8)
+            {
+                log.push(new c_movingPlatform(-359, 180, 359, 45, 1, 2));
+                waveRate8++;
+                time8 = 0;
+                if(waveRate8 > 0)
+                    {
+                        spawnTime8 = 5+Math.floor(Math.random()*2);
+                        waveRate8 = 0;
+                    }
+                else
+                    {
+                        spawnTime8 = 3+Math.floor(Math.random()*1);
+                    }
+            }
+        
+        time9 += dt;
+        if(time9 > spawnTime9)
+            {
+                if(Math.random() <= 0.75)
+                    var type = 1;
+                else
+                    var type = 2;
+                turtle.push(new c_Turtle(can.width+90, 135, 90, 45, -1, 1, type));
+                waveRate9++;
+                time9 = 0;
+                if(waveRate9 > 0)
+                    {
+                        spawnTime9 = 2+Math.floor(Math.random()*3);
+                        waveRate9 = 0;
+                    }
+                else
+                    {
+                        spawnTime9 = 3;
+                    }
+            }
+        
+        time10 += dt;
+        if(time10 > spawnTime10)
+            {
+                log.push(new c_movingPlatform(-236, 90, 236, 45, 1, 2));
+                waveRate10++;
+                time10 = 0;
+                if(waveRate10 > 1)
+                    {
+                        spawnTime10 = 5+Math.floor(Math.random()*2);
+                        waveRate10 = 0;
+                    }
+                else
+                    {
+                        spawnTime10 = 3+Math.floor(Math.random()*1);
+                    }
+            }
+        var win = true;
+        for(var i = 0; i < goal.length; i++)
+            {
+                if(!goal[i].finish)
+                    {
+                        win = false;
+                        break;
+                    }
+            }
+        if(win)
+            {
+                msg = "Level Complete";
+                gameOver = true;
+            }
+    }
+    
+    function drawBackground()
+    {
+        ctx.drawImage(sprite, 0, 106, 798, 114, 0, 0, can.width, 90);
+        
+        
+        ctx.fillStyle = "#202020";
+        ctx.fillRect(0, 355, can.width, 240);
+        
+        ctx.drawImage(sprite, 0, 239, 798, 66, 0, 315, can.width, 45);
+        
+        ctx.drawImage(sprite, 0, 239, 798, 66, 0, 585, can.width, 45);
+        
+        for(var i = 0; i < frog.life; i++)
+            {
+                ctx.drawImage(sprite, 423,346,58,58,22+(i*80), 650, 40, 40);
+            }
+        
+        
+    }
+    
+    function c_Frog(x, y)
+    {
+        this.x = x;
+        this.y = y;
+        this.width = 45;
+        this.height = 45;
+        this.onLog = false;
+        this.grounded = true;
+        this.dead = false;
+        this.finish = false;
+        this.life = 5;
+        var moveStep = 0, moving = false, moveLeft = false, moveRight = false, moveUp = false, moveDown = false, sprinting = true, sprintTimer = 0, groundTimer = 0;
+        this.move = function()
+        {
+            if(!this.dead && !this.finish)
+            {
+            if(leftFlag)
+                {
+                    if(!moving && sprinting)
+                        {
+                            moveLeft = true;
+                            moving = true;
+                            moveStep = 0;
+                            if(sprintTimer == 0)
+                                {
+                                    sprinting = false;
+                                }
+                        }
+                    if(!sprinting)
+                        sprintTimer++;
+                    if(sprintTimer > 60)
+                        {
+                            sprinting = true;
+                        }                        
+                }            
+            else if(rightFlag)
+                {
+                    if(!moving && sprinting)
+                        {
+                            moveRight = true;
+                            moving = true;
+                            moveStep = 0;
+                            if(sprintTimer == 0)
+                                {
+                                    sprinting = false;
+                                }
+                        }
+                    if(!sprinting)
+                        sprintTimer++;
+                    if(sprintTimer > 60)
+                        {
+                            sprinting = true;
+                        }                        
+                }                
+            else if(upFlag)
+                {
+                    if(!moving && sprinting)
+                        {
+                            moveUp = true;
+                            moving = true;
+                            moveStep = 0;
+                            if(sprintTimer == 0)
+                                {
+                                    sprinting = false;
+                                }
+                        }
+                    if(!sprinting)
+                        sprintTimer++;
+                    if(sprintTimer > 60)
+                        {
+                            sprinting = true;
+                        }                        
+                }
+            else if(downFlag)
+                {
+                    if(!moving && sprinting)
+                        {
+                            moveDown = true;
+                            moving = true;
+                            moveStep = 0;
+                            if(sprintTimer == 0)
+                                {
+                                    sprinting = false;
+                                }
+                        }
+                    if(!sprinting)
+                        sprintTimer++;
+                    if(sprintTimer > 60)
+                        {
+                            sprinting = true;
+                        }                        
+                }
+            else
+                {
+                    sprinting = true;
+                    sprintTimer = 0;
+                }
+                
+            
+            if(moveLeft)
+                {
+                    if(moveStep < 9)
+                        {
+                            this.x -= 5;
+                            moveStep++;
+                            orientation = 1
+                        }
+                    else
+                        {
+                            moveLeft = false;
+                            moving = false;
+                        }
+                }
+            
+            if(moveRight)
+                {
+                    if(moveStep < 9)
+                        {
+                            this.x += 5;
+                            moveStep++;
+                            orientation = 3
+                        }
+                    else
+                        {
+                            moveRight = false;
+                            moving = false;
+                        }
+                }           
+            
+            if(moveUp)
+                {
+                    if(moveStep < 9)
+                        {
+                            this.y -= 5;
+                            moveStep++;
+                            orientation = 0;
+                        }
+                    else
+                        {
+                            moveUp = false;
+                            moving = false;
+                        }
+                }
+            
+            if(moveDown)
+                {
+                    if(moveStep < 9)
+                        {
+                            this.y += 5;
+                            moveStep++;
+                            orientation = 2;
+                        }
+                    else
+                        {
+                            moveDown = false;
+                            moving = false;
+                        }
+                }
+            
+            if(this.x < 0 && !this.onLog) this.x = 0;
+            else
+                {
+                    if(this.x < -50)
+                        {
+                            this.reset();
+                        }
+                }
+            if(this.x > can.width-this.width && !this.onLog) this.x = can.width-this.width;
+            else
+                {
+                    if(this.x > can.width+50)
+                        {
+                            this.reset();
+                        }
+                }
+            if(this.y > startY) this.y = startY;    
+            this.grounded = !moving;
+            }
+        }
+        
+        var frameIndex = 0, timer = 0, orientation = 0, deadAnimation = false, wait = 0;
+        this.draw = function()
+        {
+            if(this.finish)
+                {
+                    if(wait < 3*fps)
+                        {
+                            wait++;
+                            var text = 3 - Math.floor(wait/fps);
+                            ctx.font = "70px myFont";      
+                            ctx.textAlign = "center";
+                            ctx.strokeStyle = "#5f5f5f";
+                            ctx.lineWidth = 7;
+                            ctx.strokeText(text, can.width/2, can.height/2 + 135);
+                            ctx.fillStyle = "#F2F0F2";
+                            ctx.fillText(text, can.width/2, can.height/2 + 135);
+                        }
+                    else
+                        {
+                            this.reset();
+                        }
+                }
+            else
+                {
+            if(!this.dead)
+            {
+                if(timer < fps/4)
+                    {
+                        if(moving)
+                            {
+                                timer+=4;
+                            }
+                    }
+                else
+                    {
+                        if(frameIndex < 1)
+                            {
+                                frameIndex++;
+                            }
+                        else
+                            {
+                                frameIndex = 0;
+                            }
+                        timer = 0;
+                    }            
+            
+                if(orientation == 0)
+                    ctx.drawImage(sprite, 13 + (frameIndex*69),729,69,58, this.x, this.y, this.width, this.height);
+                else if(orientation == 1)
+                    ctx.drawImage(sprite, 152 + (frameIndex*60),660,60,58, this.x, this.y+2, 45, 32);
+                else if(orientation == 2)
+                    ctx.drawImage(sprite, 148 + (frameIndex*70),728,70,60, this.x, this.y, this.width, this.height);
+                else if(orientation == 3)
+                    ctx.drawImage(sprite, 13 + (frameIndex*70),664,70,55, this.x, this.y+5, 50, 32);
+            }
+            else
+                {
+                    if(timer < fps/6)
+                        {
+                            timer++;
+                        }
+                    else
+                        {
+                            if(frameIndex < 6)
+                                {
+                                    frameIndex++;
+                                }
+                            else
+                                {
+                                    deadAnimation = true; 
+                                    this.reset();
+                                }
+                            timer = 0;
+                        }                          
+                    ctx.drawImage(sprite, 528,333 + (frameIndex*73),57,73, this.x-10, this.y-15, 57, 73);
+                }
+            console.log(this.dead)
+                }
+            
+        }
+        this.reset = function()
+        {
+            if(!this.dead && !this.finish)
+                {
+                    this.dead = true;
+                    if(this.life > 0)
+                        this.life--;
+                    else
+                        gameOver = true;
+                    frameIndex = 0;
+                }                
+            if(deadAnimation || this.finish)
+            {
+                this.x = startX;
+                this.y = startY;
+                this.onLog = false;
+                this.grounded = true;
+                this.dead = false;
+                moveStep = 0;
+                moving = false;
+                moveLeft = false;
+                moveRight = false;
+                moveUp = false;
+                moveDown = false;
+                sprinting = true;
+                sprintTimer = 0;
+                groundTimer = 0;
+                moving = false;
+                orientation = 0;
+                frameIndex = 0;
+                timer = 0;
+                wait = 0;
+                deadAnimation = false;  
+                this.finish = false;
+            }
+        }
+    }
+    
+    function collisionDetection()
+    {
+        var flag = false;
+        for(var i = 0; i < log.length; i++)
+            {
+                var collide = collisionCheck(frog, log[i]);
+                if(collide)
+                    {
+                        if(frog.x+10 > log[i].x && frog.x-10 < log[i].x+log[i].width-frog.width)
+                            {
+                                frog.x += log[i].speed*log[i].dir;
+                                flag = true;
+                            }
+                    }
+            }
+        for(var i = 0; i < turtle.length; i++)
+            {
+                var collide = collisionCheck(frog, turtle[i]);
+                if(collide && !turtle[i].sink)
+                    {
+                        if(frog.x+10 > turtle[i].x && frog.x-10 < turtle[i].x+turtle[i].width-frog.width)
+                            {
+                                frog.x += turtle[i].speed*turtle[i].dir;
+                                flag = true;
+                            }
+                    }
+            }
+        
+        
+        for(var i = 0; i < traffic.length; i++)
+            {
+                var collide = collisionCheck(frog, traffic[i]);
+                if(collide && !frog.dead)
+                    {
+                        frog.reset();
+                    }
+            }
+        for(var i = 0; i < goal.length; i++)
+            {
+                var collide = collisionCheck(frog, goal[i]);
+                if(collide && !frog.finish && !frog.dead)
+                    {
+                        goal[i].finish = true;
+                        frog.finish = true;
+                    }
+            }
+        for(var i = 0; i < land.length; i++)
+            {
+                var collide = collisionCheck(frog, land[i]);
+                if(collide && !frog.dead && !frog.finish)
+                    {
+                        frog.reset();
+                    }
+            }
+        frog.onLog = flag;
+        if(!frog.onLog && frog.grounded)
+            {
+                var collide = collisionCheck(frog, water);
+                if(collide && !frog.finish)
+                    {
+                        frog.reset();
+                    }
+            }
+    }
+        
+    function c_movingPlatform(x, y, width, height, dir, speed)
+    {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.dir = dir;
+        this.speed = speed;
+        this.dead = false;
+        
+        this.move = function()
+        {
+            if(dir > 0)
+                {
+                    this.x += this.speed;
+                    if(this.x > can.width) this.dead = true;
+                }
+            else
+                {
+                    this.x -= this.speed;
+                    if(this.x+this.width < 0 ) this.dead = true;
+                }          
+            
+        }
+        
+        this.draw = function()
+        {
+            if(this.width > 350)
+                ctx.drawImage(sprite, 12, 330, 359, 46, this.x, this.y, this.width, this.height);
+            else if(this.width > 230)
+                ctx.drawImage(sprite, 12, 394, 236, 46, this.x, this.y, this.width, this.height);
+            else if(this.width > 170)
+                ctx.drawImage(sprite, 12, 457, 173, 47, this.x, this.y, this.width, this.height);
+        }
+    }
+    
+    function c_Turtle(x, y, width, height, dir, speed, type)
+    {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.dir = dir;
+        this.speed = speed;
+        this.dead = false;
+        this.type = type;
+        this.sink = false;
+        
+        this.move = function()
+        {
+            if(dir > 0)
+                {
+                    this.x += this.speed;
+                    if(this.x > can.width) this.dead = true;
+                }
+            else
+                {
+                    this.x -= this.speed;
+                    if(this.x+this.width < 0 ) this.dead = true;
+                }
+            
+        }
+        
+        var frameIndex = 0, frameLast = 2, timer = 0;
+        var sinkTimer = 0, sinkCtr = 0, sank = false;
+        this.draw = function()
+        {
+            if(this.type == 2)
+                {
+                    if(sinkTimer < 4*fps)                        
+                        {
+                            sinkTimer++;
+                            frameLast = 2;
+                            if(timer < fps/4)
+                                {
+                                    timer++;                    
+                                }
+                            else
+                                {
+                                    if(frameIndex < frameLast)
+                                        {
+                                            frameIndex++;
+                                        }
+                                    else
+                                        {
+                                            frameIndex = 0;
+                                        }
+                                    timer = 0;
+                                }
+                        }
+                    else
+                        {
+                            
+                            this.sink = true;
+                            if(frameLast == 2)
+                                {
+                                    frameLast = 5;
+                                }
+                            
+                            if(timer < fps/4)
+                                {
+                                    timer++;                   
+                                }
+                            else
+                                { 
+                                    if(frameIndex < frameLast)
+                                        {
+                                            frameIndex++;
+                                        }
+                                    else
+                                        {
+                                            sank = true;                                       
+                                        }
+                                    timer = 0;
+                                }
+                            
+                        }
+                }
+            else                    
+                {
+                    if(timer < fps/4)
+                        {
+                            timer++;                    
+                        }
+                    else
+                        {
+                            if(frameIndex < frameLast)
+                                {
+                                    frameIndex++;
+                                }
+                            else
+                                {
+                                    frameIndex = 0;
+                                }
+                            timer = 0;
+                        }
+                }
+            if(sank)
+                {
+                    if(sinkCtr < fps)
+                            {
+                                sinkCtr++;
+                            }
+                        else                                               
+                            {
+                                this.sink = false;
+                                sinkTimer = 0; 
+                                sinkCtr = 0;
+                                sank = false;
+                            }   
+                }
+            for(var i = 0; i < this.width/45; i++)
+                ctx.drawImage(sprite, 22+(frameIndex*79),805,79,58, this.x+(i*45), this.y, 45, 45);
+        }
+    }
+        
+    function c_Traffic(x, y, width, height, dir, speed, type)
+    {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.dir = dir;
+        this.speed = speed;
+        this.dead = false;
+        this.type = type;
+        
+        this.move = function()
+        {
+            if(dir > 0)
+                {
+                    this.x += this.speed;
+                    if(this.x > can.width) this.dead = true;
+                }
+            else
+                {
+                    this.x -= this.speed;
+                    if(this.x+this.width < 0 ) this.dead = true;
+                }
+            
+            
+        }
+        
+        this.draw = function()
+        {
+            if(this.type == 1)
+                ctx.drawImage(sprite, 89, 528, 62, 53, this.x, this.y, 52, this.height);
+            else if(this.type == 2)
+                ctx.drawImage(sprite, 160, 525, 57, 57, this.x, this.y, this.width, this.height);
+            else if(this.type == 3)
+                ctx.drawImage(sprite, 20, 600, 54, 46, this.x, this.y, 54, this.height);
+            else if(this.type == 4)
+                ctx.drawImage(sprite, 18, 532, 60, 42, this.x, this.y, 56, this.height);
+            else if(this.type == 5)
+                ctx.drawImage(sprite, 208, 602, 99, 42, this.x, this.y, 92, this.height);
+        }
+    }
+    
+    function c_Water(x, y, width, height)
+    {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        
+        this.draw = function()
+        {
+            ctx.fillStyle = "#004878";
+            ctx.fillRect(this.x, this.y-65, this.width, this.height+70);
+        }
+    }
+    function c_Goal(x, y, width, height)
+    {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.finish = false;
+        
+        this.draw = function()
+        {
+            if(this.finish)
+                {
+                    ctx.drawImage(sprite, 423,346,58,58,this.x, this.y, this.width, this.height);                    
+                }
+        }
+    }
+    function c_Land(x, y, width, height)
+    {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+    function collisionCheck(A, B)
+    {
+        if ((A.x < B.x + B.width) && (A.x + A.width > B.x) && (A.y < B.y + B.height) && (A.height + A.y > B.y)) 
+            return true;
+        else 
+            return false;
+    }
+    window.addEventListener("keydown", function(evt)
+    {
+        if(evt.keyCode == 37) leftFlag = true;
+        if(evt.keyCode == 39) rightFlag = true;
+        if(evt.keyCode == 40) downFlag = true;      
+        if(evt.keyCode == 38) upFlag = true;
+        if(evt.keyCode == 13) start = true;
+    });
+    window.addEventListener("keyup", function(evt)
+    {
+        if(evt.keyCode == 37) leftFlag = false;
+        if(evt.keyCode == 39) rightFlag = false;
+        if(evt.keyCode == 40) downFlag = false;
+        if(evt.keyCode == 38) upFlag = false;
+    });
+	
+	window.addEventListener("keydown", function(e) 
+		{
+			// space and arrow keys
+			if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) 
+			{
+				e.preventDefault();
+			}
+		}, false);
+		
+</script>

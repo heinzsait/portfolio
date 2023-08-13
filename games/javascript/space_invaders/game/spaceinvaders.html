@@ -1,0 +1,359 @@
+<html>
+    <style> @font-face {font-family: myFont; src: url(font.ttf);} </style>
+    <body>
+        <canvas id = "myCanvas" width = "1280" height = "720"></canvas>
+        <script type="text/javascript" src="Ship.js"></script>
+        <script type="text/javascript" src="Explosion.js"></script>
+        <script type="text/javascript" src="Aliens.js"></script>        
+        <script type="text/javascript" src="Mothership.js"></script>
+        <script type="text/javascript" src="Barrier.js"></script>   
+        <script>
+            
+            var can = document.getElementById("myCanvas");
+            var ctx = can.getContext("2d");
+            var KEYCODES = [];
+            var fps = 60, delay = 1000/fps;
+            
+            var alienSpeedTimer = 50, aliensSpeed = 15, alienShootTimer = 0, shiftAliens = false;
+            var motherShipSpwanTimer = 0;
+            var aliens = [];            
+            var barrier = [];            
+            barrier.push(new c_Barrier(190, 550));
+            barrier.push(new c_Barrier(390, 550));                
+            barrier.push(new c_Barrier(590, 550));
+            barrier.push(new c_Barrier(790, 550));                
+            barrier.push(new c_Barrier(990, 550));            
+            var explosions = new Array(10);            
+            var player = new c_Ship(can.width/2-35, 650, "#e7e7e7");
+            var score = 0, gameOver = false, start = false;
+            var motherShip = null;
+            
+            initialize();
+            setInterval(gameLoop, delay);
+            function gameLoop()
+            {
+                ctx.fillStyle = "#231f20";
+                ctx.fillRect(0, 0, can.width, can.height);
+                if(start)           
+                {
+                    for(var i = 0; i < explosions.length; i++)
+                        {
+                            if(explosions[i] != null)
+                                {
+                                    if(!explosions[i].dead)
+                                        explosions[i].draw();
+                                    else
+                                        explosions.splice(i, 1);
+                                }
+                        }
+
+                    if(!gameOver)
+                        {
+                            for(var i = 0; i < aliens.length; i++)
+                                {
+                                    if(!aliens[i].dead)
+                                        aliens[i].draw();
+                                    if(aliens[i].bullet != null)
+                                        aliens[i].bullet.draw();
+                                }
+                            if(motherShip != null)
+                                motherShip.draw();
+                            gameController();
+                            collisionDetection();
+                            player.move();
+                            player.draw();
+                        
+
+                    for(var i = 0; i < barrier.length; i++)
+                        barrier[i].draw();
+
+                    if(checkWin())
+                        initialize();
+
+                    ctx.font = "30px myFont";
+                    ctx.textAlign = "left";
+                    ctx.fillStyle = "#e7e7e7";
+                    ctx.fillText("SCORE " + score, 25, 45);
+                    for(var k = 0; k <= player.life; k++)
+                        {
+                            var x = can.width-70 - (k*50), y = 30;
+                            for(var i = 0; i < 8; i++)
+                            {
+                                for(var j = 0; j < 15; j++)
+                                    {
+                                        if(player.bitmap[i][j] == 1)
+                                            {
+                                                ctx.fillStyle = this.color;
+                                                ctx.fillRect(x+(2*j), y+(2*i), 2, 2);
+                                            }
+                                    }
+                            }
+                        }
+                    }
+                    else
+                        {
+                            ctx.font = "100px myFont";
+                            ctx.textAlign = "center";
+                            ctx.fillStyle = "#e7e7e7";
+                            ctx.fillText("GAME OVER", can.width/2, can.height/2);
+                            ctx.font = "40px myFont";
+                            ctx.fillText("Score " + score, can.width/2, can.height/2+100);
+                        }                
+                }
+                else
+                    {
+                        ctx.font = "100px myFont";
+                        ctx.textAlign = "center";
+                        ctx.fillStyle = "#e7e7e7";
+                        ctx.fillText("SPACE", can.width/2, can.height/2-160);
+                        ctx.fillText("INVADERS", can.width/2, can.height/2-40);
+                        ctx.font = "40px myFont";
+                        ctx.fillText("Press Space to Play", can.width/2, can.height/2+100);
+                        if(KEYCODES[32])
+                            start = true;
+                    }
+            }
+            
+            function initialize()
+            {
+                var offset = 80, type;
+                aliens = [];
+                player.bullets = new Array(20);
+                for(var i = 0; i < 12; i++)
+                    {
+                        for(var j = 0; j < 5; j++)
+                            {
+                                if(j==0)
+                                    type = 3;
+                                else if((j == 1) || (j == 2))
+                                    type = 2;
+                                else
+                                    type = 1;
+                                aliens.push(new c_Aliens(150+(i*offset), 70+(j*(offset-20)), type));
+                            }
+                    }
+                if(alienSpeedTimer > 10)
+                    alienSpeedTimer -= 10;
+                else
+                    alienSpeedTimer -= 2;
+            }
+            
+            function gameController()
+            {
+                for(var i = 0; i < aliens.length; i++)
+                    {
+                        if(aliens[i].animationTimer <= 0)
+                            aliens[i].x += aliensSpeed;       
+                    }
+                for(var i = 0; i < aliens.length; i++)
+                    {
+                        if(!aliens[i].dead)
+                            {
+                                var collideLeftWall = collisionCheck(aliens[i].x+aliensSpeed, aliens[i].y, 60+aliensSpeed, 40, can.width-100, 0, 100, can.height);
+                                var collideRightWall = collisionCheck(aliens[i].x+aliensSpeed, aliens[i].y, 60+aliensSpeed, 40, 0, 0, 100, can.height);
+                                
+                                gameOver = collisionCheck(aliens[i].x, aliens[i].y, 60, 40, 0, 625, can.width, 100);
+                                
+                                if((collideRightWall)||(collideLeftWall))
+                                    {
+                                        shiftAliens = true;
+                                        break;
+                                    }
+                            }                            
+                    }
+                
+                if(shiftAliens)
+                    {
+                        shiftAliens = false;
+                        for(var i = 0; i < aliens.length; i++)
+                            aliens[i].y += Math.abs(aliensSpeed);
+                        aliensSpeed *= -1;
+                    }
+                
+                alienShootTimer += 1/fps;
+                if(alienShootTimer > Math.floor(Math.random()*2)+1)
+                    {
+                        alienShootTimer = 0;
+                        var temp =[];
+                        for(var i = 0; i < aliens.length; i++)
+                            {
+                                if((!aliens[i].dead) && (aliens[i].canShoot))
+                                    temp.push(i);   
+                            }
+                        var tempIndex = Math.floor(Math.random()*temp.length);
+                        if(aliens[temp[tempIndex]] != null)
+                            aliens[temp[tempIndex]].shoot = true;                                        
+                    }
+                
+                motherShipSpwanTimer += 1/fps;
+                if(motherShipSpwanTimer > Math.floor(Math.random()*10)+15)
+                    {
+                        motherShipSpwanTimer = 0;
+                        if(motherShip == null)
+                            motherShip = new c_Mothership(100, 80);
+                    }
+                if(motherShip != null)
+                    {
+                        motherShip.x += 2;
+                        if(motherShip.x > can.width+100)
+                            motherShip = null;
+                    }
+                
+                for(var i = 0; i < aliens.length; i++)
+                {
+                    if(i%5 == 4)
+                    {
+                        if(!aliens[i].dead)
+                            aliens[i].canShoot = true;
+                        else
+                        {
+                            if(!aliens[i-1].dead)
+                                aliens[i-1].canShoot = true;
+                            else
+                            {
+                                if(!aliens[i-2].dead)
+                                    aliens[i-2].canShoot = true;
+                                else
+                                {
+                                    if(!aliens[i-3].dead)
+                                        aliens[i-3].canShoot = true;
+                                    else
+                                    {
+                                        if(!aliens[i-4].dead)
+                                            aliens[i-4].canShoot = true;
+                                        else
+                                        {
+                                            if(i-5 > 0)
+                                            {
+                                                if(!aliens[i-5].dead)
+                                                    aliens[i-5].canShoot = true;
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+                        }
+
+                    }
+
+                }
+            }
+            
+            function checkWin()
+            {
+                var flag = true;
+                for(var i = 0; i < aliens.length; i++)
+                    {
+                        if(!aliens[i].dead)
+                            flag = false;
+                    }
+                return flag;
+            }
+            
+            function collisionCheck(x1, y1, w1, h1, x2, y2, w2, h2)
+            {
+                if ((x1 < x2 + w2) && (x1 + w1 > x2) && (y1 < y2 + h2) && (h1 + y1 > y2)) 
+                    return true;
+                else 
+                    return false;
+            }
+            
+            function collisionDetection()
+            {      
+                for(var i = 0; i < aliens.length; i++)
+                {
+                    for(var j = 0; j < player.bullets.length; j++)
+                    {
+                        if((player.bullets[j] != null) && (!aliens[i].dead) && (!player.bullets[j].dead))
+                        {
+                            var collide = collisionCheck(aliens[i].x, aliens[i].y, 60, 40, player.bullets[j].x, player.bullets[j].y, 5, 10);
+                            if(collide)
+                            {
+                                aliens[i].dead = true;
+                                player.bullets[j].dead = true;
+                                explosions.push(new c_Explosion(aliens[i].x, aliens[i].y));
+                                if(aliens[i].Type == 1)
+                                    score += 10;
+                                else if(aliens[i].Type == 2)
+                                    score += 20;
+                                else if(aliens[i].Type == 3)
+                                    score += 40;
+                            }
+                            for(var k = 0; k < barrier.length; k++)
+                            {
+                                for(var l = 0; l < barrier[k].bar.length; l++)
+                                {
+                                    var collideBarrier = collisionCheck(player.bullets[j].x, player.bullets[j].y, 5, 10, barrier[k].bar[l].x, barrier[k].bar[l].y, 25, 25);
+                                    if(collideBarrier && (barrier[k].bar[l].life > 0))
+                                    {
+                                        barrier[k].bar[l].life--;
+                                        player.bullets[j].dead = true;
+                                    }
+                                }                                            
+                            }
+                            if(motherShip != null)
+                            {
+                                var collideMotherShip = collisionCheck(player.bullets[j].x, player.bullets[j].y, 5, 10, motherShip.x, motherShip.y, 75, 40);
+                                if(collideMotherShip)
+                                    {
+                                        explosions.push(new c_Explosion(motherShip.x, motherShip.y));
+                                        player.bullets[j].dead = true;
+                                        score += 200;
+                                        motherShip = null;
+                                    }
+                            }
+                        }
+                    }
+                }
+                
+                for(var i = 0; i < aliens.length; i++)
+                {
+                    if(aliens[i].bullet != null)
+                    {
+                        for(var k = 0; k < barrier.length; k++)
+                        {
+                            for(var l = 0; l < barrier[k].bar.length; l++)
+                            {
+                                var collideBarrier = collisionCheck(aliens[i].bullet.x, aliens[i].bullet.y, 5, 10, barrier[k].bar[l].x, barrier[k].bar[l].y, 25, 25);
+                                if(collideBarrier && (barrier[k].bar[l].life > 0) && (!aliens[i].bullet.dead))
+                                {
+                                    barrier[k].bar[l].life--;
+                                    aliens[i].bullet.dead = true;
+                                }
+                            }                                            
+                        }
+                        var collidePlayer = collisionCheck(player.x, player.y, 75, 40, aliens[i].bullet.x, aliens[i].bullet.y, 5, 10);
+                        if(collidePlayer && (!aliens[i].bullet.dead))
+                        {
+                            player.dead = true;
+                            aliens[i].bullet.dead = true;
+                            explosions.push(new c_Explosion(player.x + Math.floor(Math.random()*20)+10, player.y + Math.floor(Math.random()*20)+10));
+                            explosions.push(new c_Explosion(player.x + Math.floor(Math.random()*20)+10, player.y - Math.floor(Math.random()*20)+10));
+                            explosions.push(new c_Explosion(player.x - Math.floor(Math.random()*20)+10, player.y - Math.floor(Math.random()*20)+10));
+                        }
+                    }                        
+                }
+            }
+            
+            function keyUpHandler(evt)
+            {
+                KEYCODES[evt.keyCode] = false;
+            }
+            function keyDownHandler(evt)
+            {
+                KEYCODES[evt.keyCode] = true;
+            }
+            window.addEventListener("keyup", keyUpHandler);
+            window.addEventListener("keydown", keyDownHandler);
+			window.addEventListener("keydown", function(e) 
+			{
+				// space and arrow keys
+				if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) 
+				{
+					e.preventDefault();
+				}
+			}, false);
+        </script>
+    </body>
+</html>
