@@ -946,10 +946,34 @@ a {
   text-align: center;
   color: #000000;
 }
-.cid-tMZWbDaWEb {
+.cid-tUW7vxxEW8 {
   padding-top: 6rem;
   padding-bottom: 6rem;
   background-color: #282c4b;
+}
+.cid-tUW7vxxEW8 .mbr-fallback-image.disabled {
+  display: none;
+}
+.cid-tUW7vxxEW8 .mbr-fallback-image {
+  display: block;
+  background-size: cover;
+  background-position: center center;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+}
+.cid-tUW7vxxEW8 .mbr-section-title {
+  color: #ffffff;
+}
+.cid-tUW7vxxEW8 .mbr-text,
+.cid-tUW7vxxEW8 .mbr-section-btn {
+  color: #ffffff;
+}
+.cid-tMZWbDaWEb {
+  padding-top: 6rem;
+  padding-bottom: 6rem;
+  background-color: #2a2c3b;
 }
 .cid-tMZWbDaWEb .mbr-fallback-image.disabled {
   display: none;
